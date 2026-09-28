@@ -1,0 +1,51 @@
+---
+# Rôle tls
+# Génère un certificat auto-signé pour le lab. En production, ce rôle
+# serait remplacé par un appel à Let's Encrypt / Certbot ou à une PKI interne.
+
+- name: Créer le répertoire des clés privées
+  file:
+    path: /etc/ssl/private
+    state: directory
+    mode: "0700"
+
+- name: Vérifier si un certificat existe déjà
+  stat:
+    path: "/etc/ssl/certs/{{ app_domain }}.crt"
+  register: existing_cert
+
+- name: Générer la clé privée
+  openssl_privatekey:
+    path: "/etc/ssl/private/{{ app_domain }}.key"
+    size: 2048
+  when: not existing_cert.stat.exists
+
+- name: Générer la demande de signature (CSR)
+  openssl_csr:
+    path: "/etc/ssl/private/{{ app_domain }}.csr"
+    privatekey_path: "/etc/ssl/private/{{ app_domain }}.key"
+    common_name: "{{ app_domain }}"
+    country_name: "{{ tls_country }}"
+    state_or_province_name: "{{ tls_state }}"
+    locality_name: "{{ tls_locality }}"
+    organization_name: "{{ tls_org }}"
+  when: not existing_cert.stat.exists
+
+- name: Générer le certificat auto-signé
+  openssl_certificate:
+    path: "/etc/ssl/certs/{{ app_domain }}.crt"
+    privatekey_path: "/etc/ssl/private/{{ app_domain }}.key"
+    csr_path: "/etc/ssl/private/{{ app_domain }}.csr"
+    provider: selfsigned
+    selfsigned_not_after: "+{{ tls_cert_days_valid }}d"
+  when: not existing_cert.stat.exists
+  notify: recharger nginx après renouvellement tls
+
+- name: Restreindre les droits sur la clé privée
+  file:
+    path: "/etc/ssl/private/{{ app_domain }}.key"
+    owner: root
+    group: root
+    mode: "0600"
+
+- meta: flush_handlers

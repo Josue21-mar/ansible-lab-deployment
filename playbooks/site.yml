@@ -1,0 +1,45 @@
+---
+# Playbook principal : installe et configure la pile complète
+# (base de données, reverse proxy, TLS) sur la VM cible.
+#
+# Utilisation :
+#   ansible-playbook playbooks/site.yml
+#
+# Pour ne rejouer qu'un rôle précis :
+#   ansible-playbook playbooks/site.yml --tags postgresql
+
+- name: Déploiement de la pile applicative (PostgreSQL + Nginx + TLS)
+  hosts: app_servers
+  become: true
+
+  vars_files:
+    - ../vars/main.yml
+
+  pre_tasks:
+    - name: Mettre à jour le cache des paquets APT
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      tags: always
+
+  roles:
+    - role: postgresql
+      tags: postgresql
+    - role: nginx
+      tags: nginx
+    - role: tls
+      tags: tls
+
+  post_tasks:
+    - name: Vérifier que PostgreSQL répond
+      wait_for:
+        port: 5432
+        host: 127.0.0.1
+        timeout: 10
+      tags: verify
+
+    - name: Vérifier que Nginx répond en local
+      uri:
+        url: "http://127.0.0.1"
+        status_code: 200
+      tags: verify

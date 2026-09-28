@@ -1,0 +1,13 @@
+# Fichier généré par Ansible — ne pas modifier à la main
+# (les modifications seraient écrasées au prochain déploiement)
+
+listen_addresses = '{{ postgresql_listen_addresses }}'
+port = 5432
+max_connections = {{ postgresql_max_connections }}
+shared_buffers = {{ postgresql_shared_buffers }}
+
+# Journalisation minimale utile en lab, à étoffer en production
+logging_collector = on
+log_directory = 'log'
+log_filename = 'postgresql-%Y-%m-%d.log'
+log_min_duration_statement = 500

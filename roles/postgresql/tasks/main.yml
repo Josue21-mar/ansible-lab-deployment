@@ -1,0 +1,61 @@
+---
+# Rôle postgresql
+# Installe PostgreSQL, crée la base et le rôle applicatif,
+# et restreint les connexions selon le principe du moindre privilège.
+
+- name: Installer PostgreSQL et les paquets Python nécessaires
+  apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2
+    state: present
+
+- name: S'assurer que le service PostgreSQL est démarré et activé
+  service:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: Déployer la configuration postgresql.conf
+  template:
+    src: postgresql.conf.j2
+    dest: "/etc/postgresql/{{ postgresql_version }}/main/postgresql.conf"
+    owner: postgres
+    group: postgres
+    mode: "0644"
+  notify: redémarrer postgresql
+
+- name: Déployer la configuration d'accès pg_hba.conf
+  template:
+    src: pg_hba.conf.j2
+    dest: "/etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf"
+    owner: postgres
+    group: postgres
+    mode: "0640"
+  notify: redémarrer postgresql
+
+- name: Créer le rôle applicatif
+  become_user: postgres
+  postgresql_user:
+    name: "{{ postgresql_db_user }}"
+    password: "{{ postgresql_db_password }}"
+    role_attr_flags: NOCREATEDB,NOSUPERUSER
+    state: present
+
+- name: Créer la base de données applicative
+  become_user: postgres
+  postgresql_db:
+    name: "{{ postgresql_db_name }}"
+    owner: "{{ postgresql_db_user }}"
+    encoding: UTF8
+    state: present
+
+- name: Restreindre les privilèges au strict nécessaire sur la base
+  become_user: postgres
+  postgresql_privs:
+    db: "{{ postgresql_db_name }}"
+    role: "{{ postgresql_db_user }}"
+    type: database
+    privs: CONNECT
+    state: present

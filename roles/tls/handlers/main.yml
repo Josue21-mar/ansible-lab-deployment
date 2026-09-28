@@ -1,0 +1,7 @@
+---
+# Recharge Nginx quand un nouveau certificat vient d'être généré,
+# pour qu'il prenne en compte la nouvelle clé sans redémarrer le service.
+- name: recharger nginx après renouvellement tls
+  service:
+    name: nginx
+    state: reloaded

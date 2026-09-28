@@ -1,0 +1,9 @@
+# Fichier généré par Ansible — ne pas modifier à la main
+#
+# Règle volontairement restrictive : seule l'application, en local,
+# peut se connecter à la base. Aucun accès distant n'est ouvert.
+
+# TYPE  DATABASE        USER                    ADDRESS         METHOD
+local   all             postgres                                peer
+local   {{ postgresql_db_name }}   {{ postgresql_db_user }}                 scram-sha-256
+host    {{ postgresql_db_name }}   {{ postgresql_db_user }}     127.0.0.1/32    scram-sha-256

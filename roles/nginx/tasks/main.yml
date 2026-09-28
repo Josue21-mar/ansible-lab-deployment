@@ -1,0 +1,37 @@
+---
+# Rôle nginx
+# Installe Nginx et le configure en reverse proxy HTTPS
+# devant l'application (qui écoute en local sur nginx_upstream_port).
+
+- name: Installer Nginx
+  apt:
+    name: nginx
+    state: present
+
+- name: Désactiver le site par défaut
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: recharger nginx
+
+- name: Déployer la configuration du site applicatif
+  template:
+    src: nginx.conf.j2
+    dest: "/etc/nginx/sites-available/{{ app_domain }}.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: recharger nginx
+
+- name: Activer le site applicatif
+  file:
+    src: "/etc/nginx/sites-available/{{ app_domain }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ app_domain }}.conf"
+    state: link
+  notify: recharger nginx
+
+- name: S'assurer que Nginx est démarré et activé
+  service:
+    name: nginx
+    state: started
+    enabled: true

@@ -1,0 +1,18 @@
+---
+# Variables globales du lab.
+# Les vrais mots de passe ne vivent jamais ici : ils passent par
+# ansible-vault (voir vars/secrets.yml.example).
+
+app_domain: "lab-app.local"
+
+postgresql_db_name: "labapp"
+postgresql_db_user: "labapp_user"
+postgresql_listen_addresses: "localhost"
+
+nginx_upstream_port: 8080
+
+tls_cert_days_valid: 365
+tls_country: "TG"
+tls_state: "Maritime"
+tls_locality: "Lome"
+tls_org: "Lab"
